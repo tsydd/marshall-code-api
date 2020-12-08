@@ -1,4 +1,14 @@
-import {CabinetType, DelayType, ModulationType, Patch, PedalType, PowerAmpType, PreAmpType, ReverbType} from './Patch';
+import {
+  CabinetType,
+  DelayType,
+  factory,
+  ModulationType,
+  Patch,
+  PedalType,
+  PowerAmpType,
+  PreAmpType,
+  ReverbType,
+} from './Patch';
 import MIDIAccess = WebMidi.MIDIAccess;
 import MIDIMessageEvent = WebMidi.MIDIMessageEvent;
 import MIDIOutput = WebMidi.MIDIOutput;
@@ -9,6 +19,7 @@ interface CodeOptions {
   onSettingsLoaded?: (patch: Patch) => any
   onSettingsUpdated?: (index: number) => any
   onPatchChanged?: (changes: object) => any
+  debug?: boolean
 }
 
 class CodeApi {
@@ -67,7 +78,9 @@ class CodeApi {
 
   private onMidiMessage(e: MIDIMessageEvent) {
     const data = e.data;
-    console.log(data);
+    if (this.options.debug) {
+      console.log(data);
+    }
 
     switch (data[0]) {
       case 0xA0: // tuner
@@ -97,7 +110,7 @@ class CodeApi {
 
     switch (command) {
       case 3:
-        const patch = this.decodePatch(data);
+        const patch = factory.fromArray(data);
         this.options.onSettingsLoaded?.(patch);
         break;
       case 4:
@@ -209,69 +222,6 @@ class CodeApi {
       default:
         break;
     }
-  }
-
-  private decodePatch(data: Uint8Array): Patch {
-    return {
-      number: data[9],
-      name: Array.from(data.slice(10, 28)).map(c => String.fromCharCode(c)).join('').trim(),
-
-      gain: data[29],
-      bass: data[30],
-      middle: data[31],
-      treble: data[32],
-      volume: data[33],
-
-      pedalEnabled: data[34] === 1,
-      // @ts-ignore
-      pedalType: PedalType[PedalType[data[35]]],
-      pedalParam1: data[36],
-      pedalParam2: data[37],
-      pedalParam3: data[38],
-      pedalParam4: data[39],
-
-      preAmpEnabled: data[40] === 1,
-      // @ts-ignore
-      preAmpType: PreAmpType[PreAmpType[data[41]]],
-
-      gate: data[42],
-
-      modulationEnabled: data[43] === 1,
-      // @ts-ignore
-      modulationType: ModulationType[ModulationType[data[44]]],
-      modulationParam1: data[45],
-      modulationParam2: data[46],
-      modulationParam3: data[47],
-      modulationParam4: data[48],
-
-      delayEnabled: data[49] === 1,
-      // @ts-ignore
-      delayType: DelayType[DelayType[data[50]]],
-      delayTimeMsb: data[51],
-      delayTimeLsb: data[52],
-      delayParam2: data[53],
-      delayParam3: data[54],
-      delayParam4: data[55],
-
-      reverbEnabled: data[56] === 1,
-      // @ts-ignore
-      reverbType: ReverbType[ReverbType[data[57]]],
-      reverbParam1: data[58],
-      reverbParam2: data[59],
-      reverbParam3: data[60],
-      reverbParam4: data[61],
-
-      powerAmpEnabled: data[62] === 1,
-      // @ts-ignore
-      powerAmpType: PowerAmpType[PowerAmpType[data[63]]],
-
-      cabinetEnabled: data[64] === 1,
-      // @ts-ignore
-      cabinetType: CabinetType[CabinetType[data[65]]],
-
-      presence: data[66],
-      resonance: data[67],
-    };
   }
 }
 

@@ -4,6 +4,15 @@ export declare enum PedalType {
     'Auto Wah' = 2,
     'Pitch Shifter' = 3
 }
+export declare enum DistortionMode {
+    GUV = 0,
+    ODR = 1,
+    DIS = 2
+}
+export declare enum AutoWahMode {
+    ENV = 0,
+    FLO = 1
+}
 export declare enum PreAmpType {
     JTM45 = 0,
     'CL DSL' = 1,
@@ -32,6 +41,22 @@ export declare enum ModulationType {
     Flanger = 1,
     Phaser = 2,
     Tremolo = 3
+}
+export declare enum ChorusMode {
+    CLS = 0,
+    VIB = 1
+}
+export declare enum FlangerMode {
+    JET = 0,
+    MET = 1
+}
+export declare enum PhaserMode {
+    CLS = 0,
+    VBE = 1
+}
+export declare enum TremoloMode {
+    VLV = 0,
+    SQR = 1
 }
 export declare enum ReverbType {
     Room = 0,
@@ -98,4 +123,7 @@ export interface Patch {
     presence: number;
     resonance: number;
 }
-export declare function create(): Patch;
+export declare const factory: {
+    default(): Patch;
+    fromArray(data: Uint8Array): Patch;
+};

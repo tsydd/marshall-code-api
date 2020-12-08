@@ -5,6 +5,7 @@ interface CodeOptions {
     onSettingsLoaded?: (patch: Patch) => any;
     onSettingsUpdated?: (index: number) => any;
     onPatchChanged?: (changes: object) => any;
+    debug?: boolean;
 }
 declare class CodeApi {
     private output?;
@@ -17,6 +18,5 @@ declare class CodeApi {
     private onMidiMessage;
     private handlePresetSettingsMessage;
     private handleSettingsMessage;
-    private decodePatch;
 }
 export default CodeApi;
