@@ -1,3 +1,3 @@
-import codeApi from './marshallcode';
+import CodeApi from './marshallcode';
 import { CabinetType, create, DelayType, ModulationType, Patch, PedalType, PowerAmpType, PreAmpType, ReverbType } from './Patch';
-export { codeApi, PedalType, PreAmpType, DelayType, ModulationType, ReverbType, PowerAmpType, CabinetType, Patch, create, };
+export { CodeApi, PedalType, PreAmpType, DelayType, ModulationType, ReverbType, PowerAmpType, CabinetType, Patch, create, };

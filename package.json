@@ -10,13 +10,10 @@
   "author": "Dmitry Tsydzik",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^14.14.10",
     "@types/webmidi": "^2.0.4",
     "typescript": "^4.1.2"
   },
-  "dependencies": {
-    "events": "^3.2.0"
-  },
+  "dependencies": {},
   "repository": {
     "type": "git",
     "url": "git://github.com/tsydd/marshall-code-api.git",
@@ -27,5 +24,11 @@
   },
   "files": [
     "lib/*"
+  ],
+  "keywords": [
+    "marshall",
+    "code",
+    "guitar",
+    "amplifier"
   ]
 }

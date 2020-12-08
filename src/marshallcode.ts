@@ -1,53 +1,26 @@
-import {EventEmitter} from 'events';
 import {CabinetType, DelayType, ModulationType, Patch, PedalType, PowerAmpType, PreAmpType, ReverbType} from './Patch';
 import MIDIAccess = WebMidi.MIDIAccess;
 import MIDIMessageEvent = WebMidi.MIDIMessageEvent;
 import MIDIOutput = WebMidi.MIDIOutput;
 
-const DEVICE_CONNECTED = Symbol();
-const DEVICE_DISCONNECTED = Symbol();
-const PRESET_NUMBER_CHANGED = Symbol();
-const SETTINGS_LOADED = Symbol();
-const SETTINGS_UPDATED = Symbol();
-const PATCH_CHANGED = Symbol();
+interface CodeOptions {
+  onConnected?: (connected: boolean) => any
+  onPresetNumberChanged?: (index: number) => any
+  onSettingsLoaded?: (patch: Patch) => any
+  onSettingsUpdated?: (index: number) => any
+  onPatchChanged?: (changes: object) => any
+}
 
-// noinspection JSUnusedGlobalSymbols
 class CodeApi {
-  private emitter = new EventEmitter();
   private output?: MIDIOutput;
+  private options: CodeOptions;
 
-  constructor() {
+  constructor(options: CodeOptions) {
+    this.options = options;
+
     this.onStateChanged = this.onStateChanged.bind(this);
     this.onMidiMessage = this.onMidiMessage.bind(this);
-  }
 
-  // region Listeners
-  addDeviceConnectedListener(listener: () => any) {
-    this.emitter.on(DEVICE_CONNECTED, listener);
-  }
-
-  addDeviceDisconnectedListener(listener: () => any) {
-    this.emitter.on(DEVICE_DISCONNECTED, listener);
-  }
-
-  addPresetNumberChanged(listener: (index: number) => any) {
-    this.emitter.on(PRESET_NUMBER_CHANGED, listener);
-  }
-
-  addSettingsLoadedListener(listener: (patch: Patch) => any) {
-    this.emitter.on(SETTINGS_LOADED, listener);
-  }
-
-  addSettingsUpdatedListener(listener: (index: number) => any) {
-    this.emitter.on(SETTINGS_UPDATED, listener);
-  }
-
-  addPatchChangedListener(listener: (changes: object) => any) {
-    this.emitter.on(PATCH_CHANGED, listener);
-  }
-  // endregion
-
-  connect() {
     navigator.requestMIDIAccess({sysex: true})
       .then(access => {
         this.onStateChanged(access);
@@ -83,12 +56,12 @@ class CodeApi {
 
     if (this.output && !newOutput) {
       this.output = undefined;
-      this.emitter.emit(DEVICE_DISCONNECTED);
+      this.options.onConnected?.(false);
     }
 
     if (!this.output && newOutput) {
       this.output = newOutput;
-      this.emitter.emit(DEVICE_CONNECTED);
+      this.options.onConnected?.(true);
     }
   }
 
@@ -103,7 +76,7 @@ class CodeApi {
         this.handleSettingsMessage(data[1], data[2]);
         break;
       case 0xC0:
-        this.emitter.emit(PRESET_NUMBER_CHANGED, data[1]);
+        this.options.onPresetNumberChanged?.(data[1]);
         break;
       case 0xF0:
         this.handlePresetSettingsMessage(data);
@@ -125,11 +98,11 @@ class CodeApi {
     switch (command) {
       case 3:
         const patch = this.decodePatch(data);
-        this.emitter.emit(SETTINGS_LOADED, patch);
+        this.options.onSettingsLoaded?.(patch);
         break;
       case 4:
         const index = data[9];
-        this.emitter.emit(SETTINGS_UPDATED, index);
+        this.options.onSettingsUpdated?.(index);
         break;
       default:
         throw {
@@ -143,23 +116,23 @@ class CodeApi {
   private handleSettingsMessage(key: number, value: number) {
     switch (key) {
       case 31:
-        return this.emitter.emit(PATCH_CHANGED, {delayTimeMsb: value});
+        return this.options.onPatchChanged?.({delayTimeMsb: value});
       case 63:
-        return this.emitter.emit(PATCH_CHANGED, {delayTimeLsb: value});
+        return this.options.onPatchChanged?.({delayTimeLsb: value});
       case 70:
-        return this.emitter.emit(PATCH_CHANGED, {gain: value});
+        return this.options.onPatchChanged?.({gain: value});
       case 71:
-        return this.emitter.emit(PATCH_CHANGED, {bass: value});
+        return this.options.onPatchChanged?.({bass: value});
       case 72:
-        return this.emitter.emit(PATCH_CHANGED, {middle: value});
+        return this.options.onPatchChanged?.({middle: value});
       case 73:
-        return this.emitter.emit(PATCH_CHANGED, {treble: value});
+        return this.options.onPatchChanged?.({treble: value});
       case 74:
-        return this.emitter.emit(PATCH_CHANGED, {volume: value});
+        return this.options.onPatchChanged?.({volume: value});
       case 75:
-        return this.emitter.emit(PATCH_CHANGED, {pedalEnabled: value === 1});
+        return this.options.onPatchChanged?.({pedalEnabled: value === 1});
       case 76:
-        return this.emitter.emit(PATCH_CHANGED, {
+        return this.options.onPatchChanged?.({
           // @ts-ignore
           pedalType: PedalType[PedalType[value]],
           pedalParam1: 0,
@@ -168,71 +141,71 @@ class CodeApi {
           pedalParam4: 0,
         });
       case 77:
-        return this.emitter.emit(PATCH_CHANGED, {pedalParam1: value});
+        return this.options.onPatchChanged?.({pedalParam1: value});
       case 78:
-        return this.emitter.emit(PATCH_CHANGED, {pedalParam2: value});
+        return this.options.onPatchChanged?.({pedalParam2: value});
       case 79:
-        return this.emitter.emit(PATCH_CHANGED, {pedalParam3: value});
+        return this.options.onPatchChanged?.({pedalParam3: value});
       case 80:
-        return this.emitter.emit(PATCH_CHANGED, {pedalParam4: value});
+        return this.options.onPatchChanged?.({pedalParam4: value});
       case 81:
-        return this.emitter.emit(PATCH_CHANGED, {preAmpEnabled: value === 1});
+        return this.options.onPatchChanged?.({preAmpEnabled: value === 1});
       case 82:
         // @ts-ignore
-        return this.emitter.emit(PATCH_CHANGED, {preAmpType: PreAmpType[PreAmpType[value]]});
+        return this.options.onPatchChanged?.({preAmpType: PreAmpType[PreAmpType[value]]});
       case 83:
-        return this.emitter.emit(PATCH_CHANGED, {gate: value});
+        return this.options.onPatchChanged?.({gate: value});
       case 85:
-        return this.emitter.emit(PATCH_CHANGED, {modulationEnabled: value === 1});
+        return this.options.onPatchChanged?.({modulationEnabled: value === 1});
       case 86:
         // @ts-ignore
-        return this.emitter.emit(PATCH_CHANGED, {modulationType: ModulationType[ModulationType[value]]});
+        return this.options.onPatchChanged?.({modulationType: ModulationType[ModulationType[value]]});
       case 87:
-        return this.emitter.emit(PATCH_CHANGED, {modulationParam1: value});
+        return this.options.onPatchChanged?.({modulationParam1: value});
       case 89:
-        return this.emitter.emit(PATCH_CHANGED, {modulationParam2: value});
+        return this.options.onPatchChanged?.({modulationParam2: value});
       case 90:
-        return this.emitter.emit(PATCH_CHANGED, {modulationParam3: value});
+        return this.options.onPatchChanged?.({modulationParam3: value});
       case 102:
-        return this.emitter.emit(PATCH_CHANGED, {modulationParam4: value});
+        return this.options.onPatchChanged?.({modulationParam4: value});
       case 103:
-        return this.emitter.emit(PATCH_CHANGED, {delayEnabled: value === 1});
+        return this.options.onPatchChanged?.({delayEnabled: value === 1});
       case 104:
         // @ts-ignore
-        return this.emitter.emit(PATCH_CHANGED, {delayType: DelayType[DelayType[value]]});
+        return this.options.onPatchChanged?.({delayType: DelayType[DelayType[value]]});
       case 105:
-        return this.emitter.emit(PATCH_CHANGED, {delayParam2: value});
+        return this.options.onPatchChanged?.({delayParam2: value});
       case 106:
-        return this.emitter.emit(PATCH_CHANGED, {delayParam3: value});
+        return this.options.onPatchChanged?.({delayParam3: value});
       case 107:
-        return this.emitter.emit(PATCH_CHANGED, {delayParam4: value});
+        return this.options.onPatchChanged?.({delayParam4: value});
       case 108:
-        return this.emitter.emit(PATCH_CHANGED, {reverbEnabled: value === 1});
+        return this.options.onPatchChanged?.({reverbEnabled: value === 1});
       case 109:
         // @ts-ignore
-        return this.emitter.emit(PATCH_CHANGED, {reverbType: ReverbType[ReverbType[value]]});
+        return this.options.onPatchChanged?.({reverbType: ReverbType[ReverbType[value]]});
       case 110:
-        return this.emitter.emit(PATCH_CHANGED, {reverbParam1: value});
+        return this.options.onPatchChanged?.({reverbParam1: value});
       case 111:
-        return this.emitter.emit(PATCH_CHANGED, {reverbParam2: value});
+        return this.options.onPatchChanged?.({reverbParam2: value});
       case 112:
-        return this.emitter.emit(PATCH_CHANGED, {reverbParam3: value});
+        return this.options.onPatchChanged?.({reverbParam3: value});
       case 113:
-        return this.emitter.emit(PATCH_CHANGED, {reverbParam4: value});
+        return this.options.onPatchChanged?.({reverbParam4: value});
       case 114:
-        return this.emitter.emit(PATCH_CHANGED, {powerAmpEnabled: value === 1});
+        return this.options.onPatchChanged?.({powerAmpEnabled: value === 1});
       case 115:
         // @ts-ignore
-        return this.emitter.emit(PATCH_CHANGED, {powerAmpType: PowerAmpType[PowerAmpType[value]]});
+        return this.options.onPatchChanged?.({powerAmpType: PowerAmpType[PowerAmpType[value]]});
       case 116:
-        return this.emitter.emit(PATCH_CHANGED, {cabinetEnabled: value === 1});
+        return this.options.onPatchChanged?.({cabinetEnabled: value === 1});
       case 117:
         // @ts-ignore
-        return this.emitter.emit(PATCH_CHANGED, {cabinetType: CabinetType[CabinetType[value]]});
+        return this.options.onPatchChanged?.({cabinetType: CabinetType[CabinetType[value]]});
       case 118:
-        return this.emitter.emit(PATCH_CHANGED, {presence: value});
+        return this.options.onPatchChanged?.({presence: value});
       case 119:
-        return this.emitter.emit(PATCH_CHANGED, {resonance: value});
+        return this.options.onPatchChanged?.({resonance: value});
       default:
         break;
     }
@@ -302,7 +275,4 @@ class CodeApi {
   }
 }
 
-const codeApi = new CodeApi();
-
-// noinspection JSUnusedGlobalSymbols
-export default codeApi;
+export default CodeApi;

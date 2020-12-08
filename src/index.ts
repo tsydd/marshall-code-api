@@ -1,4 +1,4 @@
-import codeApi from './marshallcode';
+import CodeApi from './marshallcode';
 import {
   CabinetType,
   create,
@@ -12,7 +12,7 @@ import {
 } from './Patch';
 
 export {
-  codeApi,
+  CodeApi,
   PedalType,
   PreAmpType,
   DelayType,

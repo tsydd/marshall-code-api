@@ -1,15 +1,15 @@
 import { Patch } from './Patch';
+interface CodeOptions {
+    onConnected?: (connected: boolean) => any;
+    onPresetNumberChanged?: (index: number) => any;
+    onSettingsLoaded?: (patch: Patch) => any;
+    onSettingsUpdated?: (index: number) => any;
+    onPatchChanged?: (changes: object) => any;
+}
 declare class CodeApi {
-    private emitter;
     private output?;
-    constructor();
-    addDeviceConnectedListener(listener: () => any): void;
-    addDeviceDisconnectedListener(listener: () => any): void;
-    addPresetNumberChanged(listener: (index: number) => any): void;
-    addSettingsLoadedListener(listener: (patch: Patch) => any): void;
-    addSettingsUpdatedListener(listener: (index: number) => any): void;
-    addPatchChangedListener(listener: (changes: object) => any): void;
-    connect(): void;
+    private options;
+    constructor(options: CodeOptions);
     switchToPreset(index: number): void;
     loadPatch(): void;
     loadPreset(index: number): void;
@@ -19,5 +19,4 @@ declare class CodeApi {
     private handleSettingsMessage;
     private decodePatch;
 }
-declare const codeApi: CodeApi;
-export default codeApi;
+export default CodeApi;
