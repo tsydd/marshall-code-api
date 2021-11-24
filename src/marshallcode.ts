@@ -14,11 +14,11 @@ import MIDIMessageEvent = WebMidi.MIDIMessageEvent;
 import MIDIOutput = WebMidi.MIDIOutput;
 
 interface CodeOptions {
-  onConnected?: (connected: boolean) => any
-  onPresetNumberChanged?: (index: number) => any
-  onSettingsLoaded?: (patch: Patch) => any
-  onSettingsUpdated?: (index: number) => any
-  onPatchChanged?: (changes: object) => any
+  onConnected?: (connected: boolean) => void
+  onPresetNumberChanged?: (index: number) => void
+  onSettingsLoaded?: (patch: Patch) => void
+  onSettingsUpdated?: (index: number) => void
+  onPatchChanged?: (changes: object) => void
   debug?: boolean
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "marshall-code-api",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "API for Marshall CODE",
   "main": "lib/index.js",
   "scripts": {
@@ -10,8 +10,8 @@
   "author": "Dmitry Tsydzik",
   "license": "ISC",
   "devDependencies": {
-    "@types/webmidi": "^2.0.4",
-    "typescript": "^4.1.2"
+    "@types/webmidi": "^2.0.6",
+    "typescript": "^4.5.2"
   },
   "dependencies": {},
   "repository": {
