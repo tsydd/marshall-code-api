@@ -1,11 +1,10 @@
-import CodeApi from './marshallcode';
+import { codeApi, CodeApi } from "./marshallcode";
 import {
   AutoWahMode,
   CabinetType,
   ChorusMode,
   DelayType,
   DistortionMode,
-  factory,
   FlangerMode,
   ModulationType,
   Patch,
@@ -15,16 +14,16 @@ import {
   PreAmpType,
   ReverbType,
   TremoloMode,
-} from './Patch';
+} from "./patch";
 
 export {
+  codeApi,
   CodeApi,
   AutoWahMode,
   CabinetType,
   ChorusMode,
   DelayType,
   DistortionMode,
-  factory,
   FlangerMode,
   ModulationType,
   Patch,

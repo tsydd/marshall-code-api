@@ -4,16 +4,26 @@
   "description": "API for Marshall CODE",
   "main": "lib/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
+    "lint": "eslint src",
     "build": "tsc"
   },
   "author": "Dmitry Tsydzik",
   "license": "ISC",
   "devDependencies": {
+    "@types/jest": "^27.0.3",
     "@types/webmidi": "^2.0.6",
+    "@typescript-eslint/eslint-plugin": "^5.4.0",
+    "@typescript-eslint/parser": "^5.4.0",
+    "eslint": "^8.3.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "jest": "^27.3.1",
+    "jest-each": "^27.3.1",
+    "prettier": "^2.5.0",
+    "ts-jest": "^27.0.7",
     "typescript": "^4.5.2"
   },
-  "dependencies": {},
   "repository": {
     "type": "git",
     "url": "git://github.com/tsydd/marshall-code-api.git",

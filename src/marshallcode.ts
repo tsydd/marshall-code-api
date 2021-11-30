@@ -1,42 +1,100 @@
-import {
-  CabinetType,
-  DelayType,
-  factory,
-  ModulationType,
-  Patch,
-  PedalType,
-  PowerAmpType,
-  PreAmpType,
-  ReverbType,
-} from './Patch';
-import MIDIAccess = WebMidi.MIDIAccess;
+import { Patch } from "./patch";
+import { patchFromArray } from "./converters";
 import MIDIMessageEvent = WebMidi.MIDIMessageEvent;
 import MIDIOutput = WebMidi.MIDIOutput;
+import MIDIInput = WebMidi.MIDIInput;
 
-interface CodeOptions {
-  onConnected?: (connected: boolean) => void
-  onPresetNumberChanged?: (index: number) => void
-  onSettingsLoaded?: (patch: Patch) => void
-  onSettingsUpdated?: (index: number) => void
-  onPatchChanged?: (changes: object) => void
-  debug?: boolean
+export interface CodeApi {
+  onConnected: (connected: boolean) => void;
+  onPresetNumberChanged: (index: number) => void;
+  onSettingsLoaded: (patch: Patch) => void;
+  onSettingsUpdated: (index: number) => void;
+  onPatchChanged: (changes: object) => void;
+  debug: boolean;
+
+  init(): Promise<void>;
+
+  switchToPreset(index: number): void;
+
+  loadPatch(): void;
+
+  loadPreset(index: number): void;
 }
 
-class CodeApi {
+class CodeClient implements CodeApi {
   private output?: MIDIOutput;
-  private options: CodeOptions;
+  onConnected: (connected: boolean) => void = () => {
+    //
+  };
+  onPresetNumberChanged: (index: number) => void = () => {
+    //
+  };
+  onSettingsLoaded: (patch: Patch) => void = () => {
+    //
+  };
+  onSettingsUpdated: (index: number) => void = () => {
+    //
+  };
+  onPatchChanged: (changes: object) => void = () => {
+    //
+  };
+  debug = false;
 
-  constructor(options: CodeOptions) {
-    this.options = options;
+  async init() {
+    this.setInput = this.setInput.bind(this);
+    this.setOutput = this.setOutput.bind(this);
 
-    this.onStateChanged = this.onStateChanged.bind(this);
-    this.onMidiMessage = this.onMidiMessage.bind(this);
+    const access = await navigator.requestMIDIAccess({ sysex: true });
 
-    navigator.requestMIDIAccess({sysex: true})
-      .then(access => {
-        this.onStateChanged(access);
-        access.onstatechange = () => this.onStateChanged(access);
-      });
+    access.inputs.forEach((input) => {
+      this.setInput(input);
+    });
+
+    access.outputs.forEach((output) => {
+      this.setOutput(output);
+    });
+
+    access.onstatechange = (e) => {
+      switch (e.port.type) {
+        case "input":
+          this.setInput(e.port as MIDIInput);
+          break;
+        case "output":
+          this.setOutput(e.port as MIDIOutput);
+          break;
+      }
+    };
+  }
+
+  private setInput(input: MIDIInput) {
+    if (input.name !== "CODE") {
+      return;
+    }
+    if (input.state === "disconnected") {
+      return;
+    }
+    if (input.connection === "open") {
+      return;
+    }
+    input.addEventListener("midimessage", (e) => {
+      this.onMidiMessage(e);
+    });
+  }
+
+  private setOutput(output: MIDIOutput) {
+    if (output.name !== "CODE") {
+      return;
+    }
+    switch (output.state) {
+      case "connected":
+        this.output = output;
+        this.onConnected(true);
+        break;
+      case "disconnected":
+        this.output = undefined;
+        this.onConnected(false);
+        break;
+    }
   }
 
   switchToPreset(index: number) {
@@ -44,54 +102,43 @@ class CodeApi {
   }
 
   loadPatch() {
-    this.output?.send([0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x73, 0x01, 0x00, 0xf7]);
+    this.output?.send([
+      0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x73, 0x01, 0x00, 0xf7,
+    ]);
   }
 
   loadPreset(index: number) {
-    this.output?.send([0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x72, 0x01, index, 0xf7]);
-  }
-
-  private onStateChanged(midiAccess: MIDIAccess) {
-    let newOutput: MIDIOutput | undefined = undefined;
-    midiAccess.outputs.forEach(output => {
-      if (output.name === 'CODE') {
-        newOutput = output;
-      }
-    });
-
-    midiAccess.inputs.forEach(input => {
-      if (input.name === 'CODE') {
-        input.onmidimessage = this.onMidiMessage;
-      }
-    });
-
-    if (this.output && !newOutput) {
-      this.output = undefined;
-      this.options.onConnected?.(false);
-    }
-
-    if (!this.output && newOutput) {
-      this.output = newOutput;
-      this.options.onConnected?.(true);
-    }
+    this.output?.send([
+      0xf0,
+      0x00,
+      0x21,
+      0x15,
+      0x7f,
+      0x7f,
+      0x7f,
+      0x72,
+      0x01,
+      index,
+      0xf7,
+    ]);
   }
 
   private onMidiMessage(e: MIDIMessageEvent) {
     const data = e.data;
-    if (this.options.debug) {
+    if (this.debug) {
       console.log(data);
     }
 
     switch (data[0]) {
-      case 0xA0: // tuner
+      case 0xa0: // tuner
         break;
-      case 0xB0:
+      case 0xb0:
         this.handleSettingsMessage(data[1], data[2]);
         break;
-      case 0xC0:
-        this.options.onPresetNumberChanged?.(data[1]);
+      case 0xc0:
+        this.onPresetNumberChanged(data[1]);
         break;
-      case 0xF0:
+      case 0xf0:
         this.handlePresetSettingsMessage(data);
         break;
     }
@@ -108,121 +155,111 @@ class CodeApi {
     // 4 - input-> updated
     const command = data[8];
 
-    switch (command) {
-      case 3:
-        const patch = factory.fromArray(data);
-        this.options.onSettingsLoaded?.(patch);
-        break;
-      case 4:
-        const index = data[9];
-        this.options.onSettingsUpdated?.(index);
-        break;
-      default:
-        throw {
-          message: 'Illegal Argument',
-          target: target,
-          command: command,
-        };
+    if (command === 3) {
+      const patch = patchFromArray(data);
+      this.onSettingsLoaded(patch);
+    } else if (command === 4) {
+      const index = data[9];
+      this.onSettingsUpdated(index);
+    } else {
+      throw {
+        message: "Illegal Argument",
+        target: target,
+        command: command,
+      };
     }
   }
 
   private handleSettingsMessage(key: number, value: number) {
     switch (key) {
       case 31:
-        return this.options.onPatchChanged?.({delayTimeMsb: value});
+        return this.onPatchChanged({ delayTimeMsb: value });
       case 63:
-        return this.options.onPatchChanged?.({delayTimeLsb: value});
+        return this.onPatchChanged({ delayTimeLsb: value });
       case 70:
-        return this.options.onPatchChanged?.({gain: value});
+        return this.onPatchChanged({ gain: value });
       case 71:
-        return this.options.onPatchChanged?.({bass: value});
+        return this.onPatchChanged({ bass: value });
       case 72:
-        return this.options.onPatchChanged?.({middle: value});
+        return this.onPatchChanged({ middle: value });
       case 73:
-        return this.options.onPatchChanged?.({treble: value});
+        return this.onPatchChanged({ treble: value });
       case 74:
-        return this.options.onPatchChanged?.({volume: value});
+        return this.onPatchChanged({ volume: value });
       case 75:
-        return this.options.onPatchChanged?.({pedalEnabled: value === 1});
+        return this.onPatchChanged({ pedalEnabled: value === 1 });
       case 76:
-        return this.options.onPatchChanged?.({
-          // @ts-ignore
-          pedalType: PedalType[PedalType[value]],
+        return this.onPatchChanged({
+          pedalType: value,
           pedalParam1: 0,
           pedalParam2: 0,
           pedalParam3: 0,
           pedalParam4: 0,
         });
       case 77:
-        return this.options.onPatchChanged?.({pedalParam1: value});
+        return this.onPatchChanged({ pedalParam1: value });
       case 78:
-        return this.options.onPatchChanged?.({pedalParam2: value});
+        return this.onPatchChanged({ pedalParam2: value });
       case 79:
-        return this.options.onPatchChanged?.({pedalParam3: value});
+        return this.onPatchChanged({ pedalParam3: value });
       case 80:
-        return this.options.onPatchChanged?.({pedalParam4: value});
+        return this.onPatchChanged({ pedalParam4: value });
       case 81:
-        return this.options.onPatchChanged?.({preAmpEnabled: value === 1});
+        return this.onPatchChanged({ preAmpEnabled: value === 1 });
       case 82:
-        // @ts-ignore
-        return this.options.onPatchChanged?.({preAmpType: PreAmpType[PreAmpType[value]]});
+        return this.onPatchChanged({ preAmpType: value });
       case 83:
-        return this.options.onPatchChanged?.({gate: value});
+        return this.onPatchChanged({ gate: value });
       case 85:
-        return this.options.onPatchChanged?.({modulationEnabled: value === 1});
+        return this.onPatchChanged({ modulationEnabled: value === 1 });
       case 86:
-        // @ts-ignore
-        return this.options.onPatchChanged?.({modulationType: ModulationType[ModulationType[value]]});
+        return this.onPatchChanged({ modulationType: value });
       case 87:
-        return this.options.onPatchChanged?.({modulationParam1: value});
+        return this.onPatchChanged({ modulationParam1: value });
       case 89:
-        return this.options.onPatchChanged?.({modulationParam2: value});
+        return this.onPatchChanged({ modulationParam2: value });
       case 90:
-        return this.options.onPatchChanged?.({modulationParam3: value});
+        return this.onPatchChanged({ modulationParam3: value });
       case 102:
-        return this.options.onPatchChanged?.({modulationParam4: value});
+        return this.onPatchChanged({ modulationParam4: value });
       case 103:
-        return this.options.onPatchChanged?.({delayEnabled: value === 1});
+        return this.onPatchChanged({ delayEnabled: value === 1 });
       case 104:
-        // @ts-ignore
-        return this.options.onPatchChanged?.({delayType: DelayType[DelayType[value]]});
+        return this.onPatchChanged({ delayType: value });
       case 105:
-        return this.options.onPatchChanged?.({delayParam2: value});
+        return this.onPatchChanged({ delayParam2: value });
       case 106:
-        return this.options.onPatchChanged?.({delayParam3: value});
+        return this.onPatchChanged({ delayParam3: value });
       case 107:
-        return this.options.onPatchChanged?.({delayParam4: value});
+        return this.onPatchChanged({ delayParam4: value });
       case 108:
-        return this.options.onPatchChanged?.({reverbEnabled: value === 1});
+        return this.onPatchChanged({ reverbEnabled: value === 1 });
       case 109:
-        // @ts-ignore
-        return this.options.onPatchChanged?.({reverbType: ReverbType[ReverbType[value]]});
+        return this.onPatchChanged({ reverbType: value });
       case 110:
-        return this.options.onPatchChanged?.({reverbParam1: value});
+        return this.onPatchChanged({ reverbParam1: value });
       case 111:
-        return this.options.onPatchChanged?.({reverbParam2: value});
+        return this.onPatchChanged({ reverbParam2: value });
       case 112:
-        return this.options.onPatchChanged?.({reverbParam3: value});
+        return this.onPatchChanged({ reverbParam3: value });
       case 113:
-        return this.options.onPatchChanged?.({reverbParam4: value});
+        return this.onPatchChanged({ reverbParam4: value });
       case 114:
-        return this.options.onPatchChanged?.({powerAmpEnabled: value === 1});
+        return this.onPatchChanged({ powerAmpEnabled: value === 1 });
       case 115:
-        // @ts-ignore
-        return this.options.onPatchChanged?.({powerAmpType: PowerAmpType[PowerAmpType[value]]});
+        return this.onPatchChanged({ powerAmpType: value });
       case 116:
-        return this.options.onPatchChanged?.({cabinetEnabled: value === 1});
+        return this.onPatchChanged({ cabinetEnabled: value === 1 });
       case 117:
-        // @ts-ignore
-        return this.options.onPatchChanged?.({cabinetType: CabinetType[CabinetType[value]]});
+        return this.onPatchChanged({ cabinetType: value });
       case 118:
-        return this.options.onPatchChanged?.({presence: value});
+        return this.onPatchChanged({ presence: value });
       case 119:
-        return this.options.onPatchChanged?.({resonance: value});
+        return this.onPatchChanged({ resonance: value });
       default:
         break;
     }
   }
 }
 
-export default CodeApi;
+export const codeApi: CodeApi = new CodeClient();

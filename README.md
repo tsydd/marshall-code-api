@@ -1,26 +1,27 @@
 ```javascript
-import CodeApi from 'marshall-code-api';
+import { codeApi } from 'marshall-code-api';
 
-const codeApi = new CodeApi({
-  onConnected: connected => {
+codeApi.onConnected = connected => {
     console.log('CODE is', connected ? 'Connected' : 'Disconnected');
     if (connected) {
-      codeApi.loadPatch();
+        codeApi.loadPatch();
     }
-  },
-  onPresetNumberChanged: number => {
+};
+codeApi.onPresetNumberChanged = number => {
     console.log('Preset number changed to', number);
     codeApi.loadPreset(number);
-  },
-  onPatchChanged: changes => {
+};
+codeApi.onPatchChanged = changes => {
     console.log('Patch changed', changes);
-  },
-  onSettingsUpdated: index => {
+};
+codeApi.onSettingsUpdated = index => {
     console.log('Patch', index, 'updated');
-  },
-  onSettingsLoaded: patch => {
+};
+codeApi.onSettingsLoaded = patch => {
     console.log('Patch loaded', patch)
-  }
-});
+};
+
+await codeApi.init();
+
 codeApi.switchToPreset(2);
 ```
