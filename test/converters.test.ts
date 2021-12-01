@@ -44,8 +44,14 @@ import {
   tremoloModeByCode,
   tremoloModeToCode,
   deviceInformationFromArray,
+  bluetoothInformationFromArray,
+  bluetoothFirmwareFromArray,
 } from "../src/converters";
-import { DeviceInformation } from "../src/system";
+import {
+  BluetoothFirmware,
+  BluetoothInformation,
+  DeviceInformation,
+} from "../src/system";
 
 describe("AutoWahMode", () => {
   const table = [
@@ -493,4 +499,30 @@ test("parse device info", () => {
     mcuFirmwareVersion: "1.46",
     dspFirmwareVersion: "1.1",
   } as DeviceInformation);
+});
+
+test("parse bluetooth info", () => {
+  const data = new Uint8Array([
+    240, 0, 33, 21, 48, 16, 2, 98, 3, 3, 50, 67, 54, 66, 55, 68, 56, 49, 56, 65,
+    48, 66, 247,
+  ]);
+
+  const bluetoothInfo = bluetoothInformationFromArray(data);
+
+  expect(bluetoothInfo).toEqual({
+    address: "2C6B7D818A0B",
+  } as BluetoothInformation);
+});
+
+test("parse bluetooth firmware", () => {
+  const data = new Uint8Array([
+    240, 0, 33, 21, 48, 16, 2, 98, 3, 4, 86, 51, 46, 49, 32, 32, 32, 32, 32, 32,
+    247,
+  ]);
+
+  const bluetoothFirmware = bluetoothFirmwareFromArray(data);
+
+  expect(bluetoothFirmware).toEqual({
+    version: "V3.1",
+  } as BluetoothFirmware);
 });

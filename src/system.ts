@@ -9,3 +9,11 @@ export interface DeviceInformation {
   mcuFirmwareVersion: string;
   dspFirmwareVersion: string;
 }
+
+export interface BluetoothInformation {
+  address: string;
+}
+
+export interface BluetoothFirmware {
+  version: string;
+}

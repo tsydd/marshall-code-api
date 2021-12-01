@@ -14,7 +14,11 @@ import {
   ReverbType,
   TremoloMode,
 } from "./preset";
-import { DeviceInformation } from "./system";
+import {
+  BluetoothFirmware,
+  BluetoothInformation,
+  DeviceInformation,
+} from "./system";
 
 export function autoWahByCode(code: number): AutoWahMode {
   switch (code) {
@@ -477,4 +481,20 @@ export function deviceInformationFromArray(
     mcuFirmwareVersion: data[27] + "." + data[28],
     dspFirmwareVersion: data[32] + "." + data[33],
   } as DeviceInformation;
+}
+
+export function bluetoothInformationFromArray(
+  data: Uint8Array
+): BluetoothInformation {
+  return {
+    address: getString(data, 10, data.length - 1),
+  } as BluetoothInformation;
+}
+
+export function bluetoothFirmwareFromArray(
+  data: Uint8Array
+): BluetoothFirmware {
+  return {
+    version: getString(data, 10, data.length - 1),
+  } as BluetoothFirmware;
 }
