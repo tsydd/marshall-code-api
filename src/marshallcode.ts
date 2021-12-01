@@ -1,8 +1,18 @@
-import { Preset } from "./preset";
-import { presetFromArray } from "./converters";
 import MIDIMessageEvent = WebMidi.MIDIMessageEvent;
 import MIDIOutput = WebMidi.MIDIOutput;
 import MIDIInput = WebMidi.MIDIInput;
+import { Preset } from "./preset";
+import {
+  bluetoothAddressFromArray,
+  bluetoothVersionFromArray,
+  deviceInformationFromArray,
+  presetFromArray,
+} from "./converters";
+import {
+  BluetoothAddress,
+  BluetoothVersion,
+  DeviceInformation,
+} from "./system";
 
 export interface CodeApi {
   onConnected: (connected: boolean) => void;
@@ -11,6 +21,9 @@ export interface CodeApi {
   onPresetReceived: (preset: Preset) => void;
   onPresetUpdated: (index: number) => void;
   onPresetModified: (changes: object) => void;
+  onDeviceInfo: (info: DeviceInformation) => void;
+  onBluetoothAddress: (address: BluetoothAddress) => void;
+  onBluetoothVersion: (version: BluetoothVersion) => void;
   debug: boolean;
 
   init(): Promise<void>;
@@ -23,13 +36,14 @@ export interface CodeApi {
 
   requestDeviceInfo(): void;
 
-  requestBluetoothInfo(): void;
+  requestBluetoothAddress(): void;
 
-  requestBluetoothFirmwareVersion(): void;
+  requestBluetoothVersion(): void;
 }
 
 class CodeClient implements CodeApi {
   private output?: MIDIOutput;
+  debug = false;
   onConnected: (connected: boolean) => void = () => {
     //
   };
@@ -48,7 +62,15 @@ class CodeClient implements CodeApi {
   onPresetModified: (changes: object) => void = () => {
     //
   };
-  debug = false;
+  onDeviceInfo: (info: DeviceInformation) => void = () => {
+    //
+  };
+  onBluetoothAddress: (info: BluetoothAddress) => void = () => {
+    //
+  };
+  onBluetoothVersion: (version: BluetoothVersion) => void = () => {
+    //
+  };
 
   async init() {
     this.setInput = this.setInput.bind(this);
@@ -137,13 +159,13 @@ class CodeClient implements CodeApi {
     this.output?.send([0xf0, 0x00, 0x21, 0x15, 0x7f, 0, 0, 0x10, 0xf7]);
   }
 
-  requestBluetoothInfo() {
+  requestBluetoothAddress() {
     this.output?.send([
       0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x62, 0x01, 0x03, 0xf7,
     ]);
   }
 
-  requestBluetoothFirmwareVersion() {
+  requestBluetoothVersion() {
     this.output?.send([
       0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x62, 0x01, 0x04, 0xf7,
     ]);
@@ -152,7 +174,7 @@ class CodeClient implements CodeApi {
   private onMidiMessage(e: MIDIMessageEvent) {
     const data = e.data;
     if (this.debug) {
-      console.log(e);
+      console.log(e, e.data);
     }
 
     switch (data[0]) {
@@ -171,33 +193,36 @@ class CodeClient implements CodeApi {
   }
 
   private handlePresetSettingsMessage(data: Uint8Array) {
-    // 1 - ->output - recall
-    // 2 - ->output - set
-    // 3 - input-> loaded
-    // 4 - input-> updated
-    const command = data[8];
-
-    switch (command) {
-      case 3: {
+    const target = data[7];
+    switch (target) {
+      case 0x11: {
+        const deviceInfo = deviceInformationFromArray(data);
+        this.onDeviceInfo(deviceInfo);
+        break;
+      }
+      case 0x72: {
         const preset = presetFromArray(data);
-        // 0x72 - preset
-        // 0x73 - current settings
-        const target = data[7];
-        switch (target) {
-          case 0x72:
-            this.onPresetReceived(preset);
+        this.onPresetReceived(preset);
+        break;
+      }
+      case 0x73: {
+        const preset = presetFromArray(data);
+        this.onCurrentPresetReceived(preset);
+        break;
+      }
+      case 0x62:
+        switch (data[9]) {
+          case 3: {
+            const bluetoothInfo = bluetoothAddressFromArray(data);
+            this.onBluetoothAddress(bluetoothInfo);
             break;
-          case 0x73:
-            this.onCurrentPresetReceived(preset);
+          }
+          case 4: {
+            const bluetoothFirmware = bluetoothVersionFromArray(data);
+            this.onBluetoothVersion(bluetoothFirmware);
             break;
+          }
         }
-        break;
-      }
-      case 4: {
-        const index = data[9];
-        this.onPresetUpdated(index);
-        break;
-      }
     }
   }
 

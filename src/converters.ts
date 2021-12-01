@@ -15,8 +15,8 @@ import {
   TremoloMode,
 } from "./preset";
 import {
-  BluetoothFirmware,
-  BluetoothInformation,
+  BluetoothVersion,
+  BluetoothAddress,
   DeviceInformation,
 } from "./system";
 
@@ -483,18 +483,14 @@ export function deviceInformationFromArray(
   } as DeviceInformation;
 }
 
-export function bluetoothInformationFromArray(
-  data: Uint8Array
-): BluetoothInformation {
+export function bluetoothAddressFromArray(data: Uint8Array): BluetoothAddress {
   return {
     address: getString(data, 10, data.length - 1),
-  } as BluetoothInformation;
+  } as BluetoothAddress;
 }
 
-export function bluetoothFirmwareFromArray(
-  data: Uint8Array
-): BluetoothFirmware {
+export function bluetoothVersionFromArray(data: Uint8Array): BluetoothVersion {
   return {
     version: getString(data, 10, data.length - 1),
-  } as BluetoothFirmware;
+  } as BluetoothVersion;
 }

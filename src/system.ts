@@ -10,10 +10,10 @@ export interface DeviceInformation {
   dspFirmwareVersion: string;
 }
 
-export interface BluetoothInformation {
+export interface BluetoothAddress {
   address: string;
 }
 
-export interface BluetoothFirmware {
+export interface BluetoothVersion {
   version: string;
 }

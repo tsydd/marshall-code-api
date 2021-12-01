@@ -44,12 +44,12 @@ import {
   tremoloModeByCode,
   tremoloModeToCode,
   deviceInformationFromArray,
-  bluetoothInformationFromArray,
-  bluetoothFirmwareFromArray,
+  bluetoothAddressFromArray,
+  bluetoothVersionFromArray,
 } from "../src/converters";
 import {
-  BluetoothFirmware,
-  BluetoothInformation,
+  BluetoothVersion,
+  BluetoothAddress,
   DeviceInformation,
 } from "../src/system";
 
@@ -501,28 +501,28 @@ test("parse device info", () => {
   } as DeviceInformation);
 });
 
-test("parse bluetooth info", () => {
+test("parse bluetooth address", () => {
   const data = new Uint8Array([
     240, 0, 33, 21, 48, 16, 2, 98, 3, 3, 50, 67, 54, 66, 55, 68, 56, 49, 56, 65,
     48, 66, 247,
   ]);
 
-  const bluetoothInfo = bluetoothInformationFromArray(data);
+  const bluetoothAddress = bluetoothAddressFromArray(data);
 
-  expect(bluetoothInfo).toEqual({
+  expect(bluetoothAddress).toEqual({
     address: "2C6B7D818A0B",
-  } as BluetoothInformation);
+  } as BluetoothAddress);
 });
 
-test("parse bluetooth firmware", () => {
+test("parse bluetooth version", () => {
   const data = new Uint8Array([
     240, 0, 33, 21, 48, 16, 2, 98, 3, 4, 86, 51, 46, 49, 32, 32, 32, 32, 32, 32,
     247,
   ]);
 
-  const bluetoothFirmware = bluetoothFirmwareFromArray(data);
+  const bluetoothVersion = bluetoothVersionFromArray(data);
 
-  expect(bluetoothFirmware).toEqual({
+  expect(bluetoothVersion).toEqual({
     version: "V3.1",
-  } as BluetoothFirmware);
+  } as BluetoothVersion);
 });
