@@ -395,7 +395,7 @@ export function tremoloModeToCode(tremoloMode: TremoloMode): number {
   }
 }
 
-export function patchFromArray(data: Uint8Array): Patch {
+export function presetFromArray(data: Uint8Array): Preset {
   return {
     number: data[9],
     name: Array.from(data.slice(10, 28))
