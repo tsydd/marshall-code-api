@@ -1,5 +1,5 @@
-import { Patch } from "./patch";
-import { patchFromArray } from "./converters";
+import { Preset } from "./preset";
+import { presetFromArray } from "./converters";
 import MIDIMessageEvent = WebMidi.MIDIMessageEvent;
 import MIDIOutput = WebMidi.MIDIOutput;
 import MIDIInput = WebMidi.MIDIInput;
@@ -7,18 +7,25 @@ import MIDIInput = WebMidi.MIDIInput;
 export interface CodeApi {
   onConnected: (connected: boolean) => void;
   onPresetNumberChanged: (index: number) => void;
-  onSettingsLoaded: (patch: Patch) => void;
-  onSettingsUpdated: (index: number) => void;
-  onPatchChanged: (changes: object) => void;
+  onCurrentPresetReceived: (preset: Preset) => void;
+  onPresetReceived: (preset: Preset) => void;
+  onPresetUpdated: (index: number) => void;
+  onPresetModified: (changes: object) => void;
   debug: boolean;
 
   init(): Promise<void>;
 
   switchToPreset(index: number): void;
 
-  loadPatch(): void;
+  requestCurrentPreset(): void;
 
-  loadPreset(index: number): void;
+  requestPreset(index: number): void;
+
+  requestDeviceInfo(): void;
+
+  requestBluetoothInfo(): void;
+
+  requestBluetoothFirmwareVersion(): void;
 }
 
 class CodeClient implements CodeApi {
@@ -29,13 +36,16 @@ class CodeClient implements CodeApi {
   onPresetNumberChanged: (index: number) => void = () => {
     //
   };
-  onSettingsLoaded: (patch: Patch) => void = () => {
+  onCurrentPresetReceived: (patch: Preset) => void = () => {
     //
   };
-  onSettingsUpdated: (index: number) => void = () => {
+  onPresetReceived: (patch: Preset) => void = () => {
     //
   };
-  onPatchChanged: (changes: object) => void = () => {
+  onPresetUpdated: (index: number) => void = () => {
+    //
+  };
+  onPresetModified: (changes: object) => void = () => {
     //
   };
   debug = false;
@@ -101,13 +111,13 @@ class CodeClient implements CodeApi {
     this.output?.send([0xc0, index]);
   }
 
-  loadPatch() {
+  requestCurrentPreset() {
     this.output?.send([
       0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x73, 0x01, 0x00, 0xf7,
     ]);
   }
 
-  loadPreset(index: number) {
+  requestPreset(index: number) {
     this.output?.send([
       0xf0,
       0x00,
@@ -123,17 +133,33 @@ class CodeClient implements CodeApi {
     ]);
   }
 
+  requestDeviceInfo() {
+    this.output?.send([0xf0, 0x00, 0x21, 0x15, 0x7f, 0, 0, 0x10, 0xf7]);
+  }
+
+  requestBluetoothInfo() {
+    this.output?.send([
+      0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x62, 0x01, 0x03, 0xf7,
+    ]);
+  }
+
+  requestBluetoothFirmwareVersion() {
+    this.output?.send([
+      0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x62, 0x01, 0x04, 0xf7,
+    ]);
+  }
+
   private onMidiMessage(e: MIDIMessageEvent) {
     const data = e.data;
     if (this.debug) {
-      console.log(data);
+      console.log(e);
     }
 
     switch (data[0]) {
       case 0xa0: // tuner
         break;
       case 0xb0:
-        this.handleSettingsMessage(data[1], data[2]);
+        this.handlePresetModification(data[1], data[2]);
         break;
       case 0xc0:
         this.onPresetNumberChanged(data[1]);
@@ -145,51 +171,56 @@ class CodeClient implements CodeApi {
   }
 
   private handlePresetSettingsMessage(data: Uint8Array) {
-    // 0x72 - preset
-    // 0x73 - current settings
-    const target = data[7];
-
     // 1 - ->output - recall
     // 2 - ->output - set
     // 3 - input-> loaded
     // 4 - input-> updated
     const command = data[8];
 
-    if (command === 3) {
-      const patch = patchFromArray(data);
-      this.onSettingsLoaded(patch);
-    } else if (command === 4) {
-      const index = data[9];
-      this.onSettingsUpdated(index);
-    } else {
-      throw {
-        message: "Illegal Argument",
-        target: target,
-        command: command,
-      };
+    switch (command) {
+      case 3: {
+        const preset = presetFromArray(data);
+        // 0x72 - preset
+        // 0x73 - current settings
+        const target = data[7];
+        switch (target) {
+          case 0x72:
+            this.onPresetReceived(preset);
+            break;
+          case 0x73:
+            this.onCurrentPresetReceived(preset);
+            break;
+        }
+        break;
+      }
+      case 4: {
+        const index = data[9];
+        this.onPresetUpdated(index);
+        break;
+      }
     }
   }
 
-  private handleSettingsMessage(key: number, value: number) {
+  private handlePresetModification(key: number, value: number) {
     switch (key) {
       case 31:
-        return this.onPatchChanged({ delayTimeMsb: value });
+        return this.onPresetModified({ delayTimeMsb: value });
       case 63:
-        return this.onPatchChanged({ delayTimeLsb: value });
+        return this.onPresetModified({ delayTimeLsb: value });
       case 70:
-        return this.onPatchChanged({ gain: value });
+        return this.onPresetModified({ gain: value });
       case 71:
-        return this.onPatchChanged({ bass: value });
+        return this.onPresetModified({ bass: value });
       case 72:
-        return this.onPatchChanged({ middle: value });
+        return this.onPresetModified({ middle: value });
       case 73:
-        return this.onPatchChanged({ treble: value });
+        return this.onPresetModified({ treble: value });
       case 74:
-        return this.onPatchChanged({ volume: value });
+        return this.onPresetModified({ volume: value });
       case 75:
-        return this.onPatchChanged({ pedalEnabled: value === 1 });
+        return this.onPresetModified({ pedalEnabled: value === 1 });
       case 76:
-        return this.onPatchChanged({
+        return this.onPresetModified({
           pedalType: value,
           pedalParam1: 0,
           pedalParam2: 0,
@@ -197,65 +228,65 @@ class CodeClient implements CodeApi {
           pedalParam4: 0,
         });
       case 77:
-        return this.onPatchChanged({ pedalParam1: value });
+        return this.onPresetModified({ pedalParam1: value });
       case 78:
-        return this.onPatchChanged({ pedalParam2: value });
+        return this.onPresetModified({ pedalParam2: value });
       case 79:
-        return this.onPatchChanged({ pedalParam3: value });
+        return this.onPresetModified({ pedalParam3: value });
       case 80:
-        return this.onPatchChanged({ pedalParam4: value });
+        return this.onPresetModified({ pedalParam4: value });
       case 81:
-        return this.onPatchChanged({ preAmpEnabled: value === 1 });
+        return this.onPresetModified({ preAmpEnabled: value === 1 });
       case 82:
-        return this.onPatchChanged({ preAmpType: value });
+        return this.onPresetModified({ preAmpType: value });
       case 83:
-        return this.onPatchChanged({ gate: value });
+        return this.onPresetModified({ gate: value });
       case 85:
-        return this.onPatchChanged({ modulationEnabled: value === 1 });
+        return this.onPresetModified({ modulationEnabled: value === 1 });
       case 86:
-        return this.onPatchChanged({ modulationType: value });
+        return this.onPresetModified({ modulationType: value });
       case 87:
-        return this.onPatchChanged({ modulationParam1: value });
+        return this.onPresetModified({ modulationParam1: value });
       case 89:
-        return this.onPatchChanged({ modulationParam2: value });
+        return this.onPresetModified({ modulationParam2: value });
       case 90:
-        return this.onPatchChanged({ modulationParam3: value });
+        return this.onPresetModified({ modulationParam3: value });
       case 102:
-        return this.onPatchChanged({ modulationParam4: value });
+        return this.onPresetModified({ modulationParam4: value });
       case 103:
-        return this.onPatchChanged({ delayEnabled: value === 1 });
+        return this.onPresetModified({ delayEnabled: value === 1 });
       case 104:
-        return this.onPatchChanged({ delayType: value });
+        return this.onPresetModified({ delayType: value });
       case 105:
-        return this.onPatchChanged({ delayParam2: value });
+        return this.onPresetModified({ delayParam2: value });
       case 106:
-        return this.onPatchChanged({ delayParam3: value });
+        return this.onPresetModified({ delayParam3: value });
       case 107:
-        return this.onPatchChanged({ delayParam4: value });
+        return this.onPresetModified({ delayParam4: value });
       case 108:
-        return this.onPatchChanged({ reverbEnabled: value === 1 });
+        return this.onPresetModified({ reverbEnabled: value === 1 });
       case 109:
-        return this.onPatchChanged({ reverbType: value });
+        return this.onPresetModified({ reverbType: value });
       case 110:
-        return this.onPatchChanged({ reverbParam1: value });
+        return this.onPresetModified({ reverbParam1: value });
       case 111:
-        return this.onPatchChanged({ reverbParam2: value });
+        return this.onPresetModified({ reverbParam2: value });
       case 112:
-        return this.onPatchChanged({ reverbParam3: value });
+        return this.onPresetModified({ reverbParam3: value });
       case 113:
-        return this.onPatchChanged({ reverbParam4: value });
+        return this.onPresetModified({ reverbParam4: value });
       case 114:
-        return this.onPatchChanged({ powerAmpEnabled: value === 1 });
+        return this.onPresetModified({ powerAmpEnabled: value === 1 });
       case 115:
-        return this.onPatchChanged({ powerAmpType: value });
+        return this.onPresetModified({ powerAmpType: value });
       case 116:
-        return this.onPatchChanged({ cabinetEnabled: value === 1 });
+        return this.onPresetModified({ cabinetEnabled: value === 1 });
       case 117:
-        return this.onPatchChanged({ cabinetType: value });
+        return this.onPresetModified({ cabinetType: value });
       case 118:
-        return this.onPatchChanged({ presence: value });
+        return this.onPresetModified({ presence: value });
       case 119:
-        return this.onPatchChanged({ resonance: value });
+        return this.onPresetModified({ resonance: value });
       default:
         break;
     }

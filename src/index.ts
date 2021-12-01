@@ -7,14 +7,14 @@ import {
   DistortionMode,
   FlangerMode,
   ModulationType,
-  Patch,
+  Preset,
   PedalType,
   PhaserMode,
   PowerAmpType,
   PreAmpType,
   ReverbType,
   TremoloMode,
-} from "./patch";
+} from "./preset";
 
 export {
   codeApi,
@@ -26,7 +26,7 @@ export {
   DistortionMode,
   FlangerMode,
   ModulationType,
-  Patch,
+  Preset,
   PedalType,
   PhaserMode,
   PowerAmpType,

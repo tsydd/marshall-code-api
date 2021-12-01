@@ -93,7 +93,7 @@ export enum TremoloMode {
   SQR = "SQR",
 }
 
-export interface Patch {
+export interface Preset {
   number?: number;
   name?: string;
 

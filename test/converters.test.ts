@@ -7,7 +7,7 @@ import {
   DistortionMode,
   FlangerMode,
   ModulationType,
-  Patch,
+  Preset,
   PedalType,
   PhaserMode,
   PowerAmpType,
@@ -30,7 +30,7 @@ import {
   flangerModeToCode,
   modulationTypeByCode,
   modulationTypeToCode,
-  patchFromArray,
+  presetFromArray,
   pedalTypeByCode,
   pedalTypeToCode,
   phaserModeByCode,
@@ -421,14 +421,14 @@ describe("TremoloMode", () => {
 });
 
 test("fromArray", () => {
-  const rawPatch = new Uint8Array([
+  const rawPreset = new Uint8Array([
     240, 0, 33, 21, 48, 16, 2, 115, 3, 2, 83, 108, 105, 112, 107, 110, 111, 116,
     32, 83, 108, 105, 112, 107, 110, 111, 116, 32, 0, 80, 80, 40, 80, 50, 1, 1,
     0, 50, 50, 50, 1, 12, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
     0, 0, 1, 3, 1, 6, 63, 50, 12, 13, 26, 27, 28, 29, 247,
   ]);
-  const patch = patchFromArray(rawPatch);
-  expect(patch).toEqual({
+  const preset = presetFromArray(rawPreset);
+  expect(preset).toEqual({
     bass: 80,
     cabinetEnabled: true,
     cabinetType: CabinetType._1912,
@@ -470,5 +470,5 @@ test("fromArray", () => {
     reverbType: ReverbType.HALL,
     treble: 80,
     volume: 50,
-  } as Patch);
+  } as Preset);
 });

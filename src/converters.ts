@@ -6,14 +6,14 @@ import {
   DistortionMode,
   FlangerMode,
   ModulationType,
-  Patch,
+  Preset,
   PedalType,
   PhaserMode,
   PowerAmpType,
   PreAmpType,
   ReverbType,
   TremoloMode,
-} from "./patch";
+} from "./preset";
 
 export function autoWahByCode(code: number): AutoWahMode {
   switch (code) {

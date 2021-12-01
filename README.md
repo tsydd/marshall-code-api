@@ -11,14 +11,14 @@ codeApi.onPresetNumberChanged = number => {
     console.log('Preset number changed to', number);
     codeApi.loadPreset(number);
 };
-codeApi.onPatchChanged = changes => {
-    console.log('Patch changed', changes);
+codeApi.onPresetModified = changes => {
+    console.log('Preset changed', changes);
 };
-codeApi.onSettingsUpdated = index => {
-    console.log('Patch', index, 'updated');
+codeApi.onPresetUpdated = index => {
+    console.log('Preset', index, 'updated');
 };
-codeApi.onSettingsLoaded = patch => {
-    console.log('Patch loaded', patch)
+codeApi.onCurrentPresetReceived = patch => {
+    console.log('Preset loaded', patch)
 };
 
 await codeApi.init();
