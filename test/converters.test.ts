@@ -43,7 +43,9 @@ import {
   reverbTypeToCode,
   tremoloModeByCode,
   tremoloModeToCode,
+  deviceInformationFromArray,
 } from "../src/converters";
+import { DeviceInformation } from "../src/system";
 
 describe("AutoWahMode", () => {
   const table = [
@@ -471,4 +473,24 @@ test("fromArray", () => {
     treble: 80,
     volume: 50,
   } as Preset);
+});
+
+test("parse device info", () => {
+  const data = new Uint8Array([
+    240, 0, 33, 21, 48, 16, 2, 17, 0, 86, 48, 50, 48, 50, 53, 65, 57, 57, 69, 1,
+    0, 0, 6, 2, 1, 1, 0, 1, 46, 33, 1, 0, 1, 1, 0, 247,
+  ]);
+
+  const deviceInfo = deviceInformationFromArray(data);
+  expect(deviceInfo).toEqual({
+    bootloaderVersion: "0.6",
+    deviceId: 2,
+    familyId: 48,
+    hardwareVersion: "1.0",
+    modelId: 16,
+    serialNumber: "V02025A99E",
+    status: 0,
+    mcuFirmwareVersion: "1.46",
+    dspFirmwareVersion: "1.1",
+  } as DeviceInformation);
 });

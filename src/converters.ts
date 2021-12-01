@@ -14,6 +14,7 @@ import {
   ReverbType,
   TremoloMode,
 } from "./preset";
+import { DeviceInformation } from "./system";
 
 export function autoWahByCode(code: number): AutoWahMode {
   switch (code) {
@@ -395,13 +396,21 @@ export function tremoloModeToCode(tremoloMode: TremoloMode): number {
   }
 }
 
+export function getString(
+  data: Uint8Array,
+  start: number,
+  end?: number
+): string {
+  return Array.from(data.slice(start, end))
+    .map((c) => String.fromCharCode(c))
+    .join("")
+    .trim();
+}
+
 export function presetFromArray(data: Uint8Array): Preset {
   return {
     number: data[9],
-    name: Array.from(data.slice(10, 28))
-      .map((c) => String.fromCharCode(c))
-      .join("")
-      .trim(),
+    name: getString(data, 10, 28),
 
     gain: data[29],
     bass: data[30],
@@ -452,4 +461,20 @@ export function presetFromArray(data: Uint8Array): Preset {
     presence: data[66],
     resonance: data[67],
   };
+}
+
+export function deviceInformationFromArray(
+  data: Uint8Array
+): DeviceInformation {
+  return {
+    familyId: data[4],
+    modelId: data[5],
+    deviceId: data[6],
+    status: data[8],
+    serialNumber: getString(data, 9, 19),
+    hardwareVersion: data[19] + "." + data[20],
+    bootloaderVersion: data[21] + "." + data[22],
+    mcuFirmwareVersion: data[27] + "." + data[28],
+    dspFirmwareVersion: data[32] + "." + data[33],
+  } as DeviceInformation;
 }
