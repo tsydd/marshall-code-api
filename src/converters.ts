@@ -20,7 +20,7 @@ import {
   DeviceInformation,
 } from "./system";
 
-export function autoWahByCode(code: number): AutoWahMode {
+export function autoWahModeByCode(code: number): AutoWahMode {
   switch (code) {
     case 0:
       return AutoWahMode.ENV;
@@ -31,7 +31,7 @@ export function autoWahByCode(code: number): AutoWahMode {
   }
 }
 
-export function autoWahToCode(autoWahMode: AutoWahMode): number {
+export function autoWahModeToCode(autoWahMode: AutoWahMode): number {
   switch (autoWahMode) {
     case AutoWahMode.ENV:
       return 0;

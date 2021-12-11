@@ -16,8 +16,8 @@ import {
   TremoloMode,
 } from "../src";
 import {
-  autoWahByCode,
-  autoWahToCode,
+  autoWahModeByCode,
+  autoWahModeToCode,
   cabinetTypeByCode,
   cabinetTypeToCode,
   chorusModeByCode,
@@ -62,12 +62,12 @@ describe("AutoWahMode", () => {
   each(table).test(
     "autoWahModeByCode($code) = $autoWahMode",
     ({ code, autoWahMode }) => {
-      expect(autoWahByCode(code)).toBe(autoWahMode);
+      expect(autoWahModeByCode(code)).toBe(autoWahMode);
     }
   );
 
   test("autoWahModeByCode(3) throws exception", () => {
-    expect(() => autoWahByCode(2)).toThrowError(
+    expect(() => autoWahModeByCode(2)).toThrowError(
       Error("AutoWahMode for code '2' is not defined")
     );
   });
@@ -75,7 +75,7 @@ describe("AutoWahMode", () => {
   each(table).test(
     "autoWahModeToCode($autoWahMode) = $code",
     ({ code, autoWahMode }) => {
-      expect(autoWahToCode(autoWahMode)).toBe(code);
+      expect(autoWahModeToCode(autoWahMode)).toBe(code);
     }
   );
 });
