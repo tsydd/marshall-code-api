@@ -5,8 +5,15 @@ import { Preset } from "./preset";
 import {
   bluetoothAddressFromArray,
   bluetoothVersionFromArray,
+  cabinetTypeByCode,
+  delayTypeByCode,
   deviceInformationFromArray,
+  modulationTypeByCode,
+  pedalTypeByCode,
+  powerAmpTypeByCode,
+  preAmpTypeByCode,
   presetFromArray,
+  reverbTypeByCode,
 } from "./converters";
 import {
   BluetoothAddress,
@@ -59,7 +66,7 @@ class CodeClient implements CodeApi {
   onPresetUpdated: (index: number) => void = () => {
     //
   };
-  onPresetModified: (changes: object) => void = () => {
+  onPresetModified: (changes: Partial<Preset>) => void = () => {
     //
   };
   onDeviceInfo: (info: DeviceInformation) => void = () => {
@@ -246,7 +253,7 @@ class CodeClient implements CodeApi {
         return this.onPresetModified({ pedalEnabled: value === 1 });
       case 76:
         return this.onPresetModified({
-          pedalType: value,
+          pedalType: pedalTypeByCode(value),
           pedalParam1: 0,
           pedalParam2: 0,
           pedalParam3: 0,
@@ -263,13 +270,15 @@ class CodeClient implements CodeApi {
       case 81:
         return this.onPresetModified({ preAmpEnabled: value === 1 });
       case 82:
-        return this.onPresetModified({ preAmpType: value });
+        return this.onPresetModified({ preAmpType: preAmpTypeByCode(value) });
       case 83:
         return this.onPresetModified({ gate: value });
       case 85:
         return this.onPresetModified({ modulationEnabled: value === 1 });
       case 86:
-        return this.onPresetModified({ modulationType: value });
+        return this.onPresetModified({
+          modulationType: modulationTypeByCode(value),
+        });
       case 87:
         return this.onPresetModified({ modulationParam1: value });
       case 89:
@@ -281,7 +290,7 @@ class CodeClient implements CodeApi {
       case 103:
         return this.onPresetModified({ delayEnabled: value === 1 });
       case 104:
-        return this.onPresetModified({ delayType: value });
+        return this.onPresetModified({ delayType: delayTypeByCode(value) });
       case 105:
         return this.onPresetModified({ delayParam2: value });
       case 106:
@@ -291,7 +300,7 @@ class CodeClient implements CodeApi {
       case 108:
         return this.onPresetModified({ reverbEnabled: value === 1 });
       case 109:
-        return this.onPresetModified({ reverbType: value });
+        return this.onPresetModified({ reverbType: reverbTypeByCode(value) });
       case 110:
         return this.onPresetModified({ reverbParam1: value });
       case 111:
@@ -303,11 +312,13 @@ class CodeClient implements CodeApi {
       case 114:
         return this.onPresetModified({ powerAmpEnabled: value === 1 });
       case 115:
-        return this.onPresetModified({ powerAmpType: value });
+        return this.onPresetModified({
+          powerAmpType: powerAmpTypeByCode(value),
+        });
       case 116:
         return this.onPresetModified({ cabinetEnabled: value === 1 });
       case 117:
-        return this.onPresetModified({ cabinetType: value });
+        return this.onPresetModified({ cabinetType: cabinetTypeByCode(value) });
       case 118:
         return this.onPresetModified({ presence: value });
       case 119:
