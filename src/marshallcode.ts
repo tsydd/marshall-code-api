@@ -6,14 +6,21 @@ import {
   bluetoothAddressFromArray,
   bluetoothVersionFromArray,
   cabinetTypeByCode,
+  cabinetTypeToCode,
   delayTypeByCode,
+  delayTypeToCode,
   deviceInformationFromArray,
   modulationTypeByCode,
+  modulationTypeToCode,
   pedalTypeByCode,
+  pedalTypeToCode,
   powerAmpTypeByCode,
+  powerAmpTypeToCode,
   preAmpTypeByCode,
+  preAmpTypeToCode,
   presetFromArray,
   reverbTypeByCode,
+  reverbTypeToCode,
 } from "./converters";
 import {
   BluetoothAddress,
@@ -27,7 +34,7 @@ export interface CodeApi {
   onCurrentPresetReceived: (preset: Preset) => void;
   onPresetReceived: (preset: Preset) => void;
   onPresetUpdated: (index: number) => void;
-  onPresetModified: (changes: object) => void;
+  onPresetModified: (changes: Partial<Preset>) => void;
   onDeviceInfo: (info: DeviceInformation) => void;
   onBluetoothAddress: (address: BluetoothAddress) => void;
   onBluetoothVersion: (version: BluetoothVersion) => void;
@@ -46,38 +53,24 @@ export interface CodeApi {
   requestBluetoothAddress(): void;
 
   requestBluetoothVersion(): void;
+
+  modifyPreset(changes: Partial<Preset>): void;
 }
 
 class CodeClient implements CodeApi {
   private output?: MIDIOutput;
   debug = false;
-  onConnected: (connected: boolean) => void = () => {
-    //
-  };
-  onPresetNumberChanged: (index: number) => void = () => {
-    //
-  };
-  onCurrentPresetReceived: (patch: Preset) => void = () => {
-    //
-  };
-  onPresetReceived: (patch: Preset) => void = () => {
-    //
-  };
-  onPresetUpdated: (index: number) => void = () => {
-    //
-  };
-  onPresetModified: (changes: Partial<Preset>) => void = () => {
-    //
-  };
-  onDeviceInfo: (info: DeviceInformation) => void = () => {
-    //
-  };
-  onBluetoothAddress: (info: BluetoothAddress) => void = () => {
-    //
-  };
-  onBluetoothVersion: (version: BluetoothVersion) => void = () => {
-    //
-  };
+  /* eslint-disable @typescript-eslint/no-empty-function */
+  onConnected: (connected: boolean) => void = () => {};
+  onPresetNumberChanged: (index: number) => void = () => {};
+  onCurrentPresetReceived: (patch: Preset) => void = () => {};
+  onPresetReceived: (patch: Preset) => void = () => {};
+  onPresetUpdated: (index: number) => void = () => {};
+  onPresetModified: (changes: Partial<Preset>) => void = () => {};
+  onDeviceInfo: (info: DeviceInformation) => void = () => {};
+  onBluetoothAddress: (info: BluetoothAddress) => void = () => {};
+  onBluetoothVersion: (version: BluetoothVersion) => void = () => {};
+  /* eslint-enable @typescript-eslint/no-empty-function */
 
   async init() {
     this.setInput = this.setInput.bind(this);
@@ -125,10 +118,14 @@ class CodeClient implements CodeApi {
       return;
     }
     switch (output.state) {
-      case "connected":
+      case "connected": {
+        if (this.output == output) {
+          break;
+        }
         this.output = output;
         this.onConnected(true);
         break;
+      }
       case "disconnected":
         this.output = undefined;
         this.onConnected(false);
@@ -136,18 +133,20 @@ class CodeClient implements CodeApi {
     }
   }
 
+  private send(...data: number[]) {
+    this.output?.send(data);
+  }
+
   switchToPreset(index: number) {
-    this.output?.send([0xc0, index]);
+    this.send(0xc0, index);
   }
 
   requestCurrentPreset() {
-    this.output?.send([
-      0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x73, 0x01, 0x00, 0xf7,
-    ]);
+    this.send(0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x73, 0x01, 0x00, 0xf7);
   }
 
   requestPreset(index: number) {
-    this.output?.send([
+    this.send(
       0xf0,
       0x00,
       0x21,
@@ -158,24 +157,87 @@ class CodeClient implements CodeApi {
       0x72,
       0x01,
       index,
-      0xf7,
-    ]);
+      0xf7
+    );
   }
 
   requestDeviceInfo() {
-    this.output?.send([0xf0, 0x00, 0x21, 0x15, 0x7f, 0, 0, 0x10, 0xf7]);
+    this.send(0xf0, 0x00, 0x21, 0x15, 0x7f, 0, 0, 0x10, 0xf7);
   }
 
   requestBluetoothAddress() {
-    this.output?.send([
-      0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x62, 0x01, 0x03, 0xf7,
-    ]);
+    this.send(0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x62, 0x01, 0x03, 0xf7);
   }
 
   requestBluetoothVersion() {
-    this.output?.send([
-      0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x62, 0x01, 0x04, 0xf7,
-    ]);
+    this.send(0xf0, 0x00, 0x21, 0x15, 0x7f, 0x7f, 0x7f, 0x62, 0x01, 0x04, 0xf7);
+  }
+
+  modifyPreset(changes: Partial<Preset>) {
+    this.modifyNumberIfDefined(31, changes.delayTimeMsb);
+    this.modifyNumberIfDefined(63, changes.delayTimeLsb);
+
+    this.modifyNumberIfDefined(70, changes.gain);
+    this.modifyNumberIfDefined(71, changes.bass);
+    this.modifyNumberIfDefined(72, changes.middle);
+    this.modifyNumberIfDefined(73, changes.treble);
+    this.modifyNumberIfDefined(74, changes.volume);
+
+    this.modifyBooleanIfDefined(75, changes.pedalEnabled);
+    this.modifyNumberIfDefined(76, pedalTypeToCode(changes.pedalType));
+    this.modifyNumberIfDefined(77, changes.pedalParam1);
+    this.modifyNumberIfDefined(78, changes.pedalParam2);
+    this.modifyNumberIfDefined(79, changes.pedalParam3);
+    this.modifyNumberIfDefined(80, changes.pedalParam4);
+
+    this.modifyBooleanIfDefined(81, changes.preAmpEnabled);
+    this.modifyNumberIfDefined(82, preAmpTypeToCode(changes.preAmpType));
+
+    this.modifyNumberIfDefined(83, changes.gate);
+
+    this.modifyBooleanIfDefined(85, changes.modulationEnabled);
+    this.modifyNumberIfDefined(
+      86,
+      modulationTypeToCode(changes.modulationType)
+    );
+    this.modifyNumberIfDefined(87, changes.modulationParam1);
+    this.modifyNumberIfDefined(89, changes.modulationParam2);
+    this.modifyNumberIfDefined(90, changes.modulationParam3);
+    this.modifyNumberIfDefined(102, changes.modulationParam4);
+
+    this.modifyBooleanIfDefined(103, changes.delayEnabled);
+    this.modifyNumberIfDefined(104, delayTypeToCode(changes.delayType));
+    this.modifyNumberIfDefined(105, changes.delayParam2);
+    this.modifyNumberIfDefined(106, changes.delayParam3);
+    this.modifyNumberIfDefined(107, changes.delayParam4);
+
+    this.modifyBooleanIfDefined(108, changes.reverbEnabled);
+    this.modifyNumberIfDefined(109, reverbTypeToCode(changes.reverbType));
+    this.modifyNumberIfDefined(110, changes.reverbParam1);
+    this.modifyNumberIfDefined(111, changes.reverbParam2);
+    this.modifyNumberIfDefined(112, changes.reverbParam3);
+    this.modifyNumberIfDefined(113, changes.reverbParam4);
+
+    this.modifyBooleanIfDefined(114, changes.powerAmpEnabled);
+    this.modifyNumberIfDefined(115, powerAmpTypeToCode(changes.powerAmpType));
+
+    this.modifyBooleanIfDefined(116, changes.cabinetEnabled);
+    this.modifyNumberIfDefined(117, cabinetTypeToCode(changes.cabinetType));
+
+    this.modifyNumberIfDefined(118, changes.presence);
+    this.modifyNumberIfDefined(119, changes.resonance);
+  }
+
+  modifyNumberIfDefined(key: number, value: number | undefined) {
+    if (value !== undefined) {
+      this.send(0xb0, key, value);
+    }
+  }
+
+  modifyBooleanIfDefined(key: number, value: boolean | undefined) {
+    if (value !== undefined) {
+      this.send(0xb0, key, value ? 1 : 0);
+    }
   }
 
   private onMidiMessage(e: MIDIMessageEvent) {

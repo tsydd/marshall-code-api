@@ -20,12 +20,14 @@ import {
   BluetoothVersion,
   DeviceInformation,
 } from "./system";
+import * as converters from "./converters";
 
 export {
   BluetoothAddress,
   BluetoothVersion,
   codeApi,
   CodeApi,
+  converters,
   AutoWahMode,
   CabinetType,
   ChorusMode,

@@ -63,8 +63,12 @@ export function cabinetTypeByCode(code: number) {
   }
 }
 
-export function cabinetTypeToCode(cabinetType: CabinetType): number {
+export function cabinetTypeToCode(
+  cabinetType: CabinetType | undefined
+): number | undefined {
   switch (cabinetType) {
+    case undefined:
+      return undefined;
     case CabinetType._1960:
       return 0;
     case CabinetType._1960V:
@@ -119,8 +123,12 @@ export function delayTypeByCode(code: number): DelayType {
   }
 }
 
-export function delayTypeToCode(delayType: DelayType): number {
+export function delayTypeToCode(
+  delayType: DelayType | undefined
+): number | undefined {
   switch (delayType) {
+    case undefined:
+      return undefined;
     case DelayType.STUDIO:
       return 0;
     case DelayType.VINTAGE:
@@ -191,8 +199,12 @@ export function modulationTypeByCode(code: number): ModulationType {
   }
 }
 
-export function modulationTypeToCode(modulationType: ModulationType): number {
+export function modulationTypeToCode(
+  modulationType: ModulationType | undefined
+): number | undefined {
   switch (modulationType) {
+    case undefined:
+      return undefined;
     case ModulationType.CHORUS:
       return 0;
     case ModulationType.FLANGER:
@@ -219,8 +231,12 @@ export function pedalTypeByCode(code: number): PedalType {
   }
 }
 
-export function pedalTypeToCode(pedalType: PedalType): number {
+export function pedalTypeToCode(
+  pedalType: PedalType | undefined
+): number | undefined {
   switch (pedalType) {
+    case undefined:
+      return undefined;
     case PedalType.COMPRESSOR:
       return 0;
     case PedalType.DISTORTION:
@@ -267,8 +283,12 @@ export function powerAmpTypeByCode(code: number): PowerAmpType {
   }
 }
 
-export function powerAmpTypeToCode(powerAmpType: PowerAmpType): number {
+export function powerAmpTypeToCode(
+  powerAmpType: PowerAmpType | undefined
+): number | undefined {
   switch (powerAmpType) {
+    case undefined:
+      return undefined;
     case PowerAmpType.CLASSIC_MARSHALL_100W:
       return 0;
     case PowerAmpType.VINTAGE_MARSHALL_30W:
@@ -317,8 +337,12 @@ export function preAmpTypeByCode(code: number): PreAmpType {
   }
 }
 
-export function preAmpTypeToCode(preAmpType: PreAmpType): number {
+export function preAmpTypeToCode(
+  preAmpType: PreAmpType | undefined
+): number | undefined {
   switch (preAmpType) {
+    case undefined:
+      return undefined;
     case PreAmpType.JTM45:
       return 0;
     case PreAmpType.CL_DSL:
@@ -367,8 +391,12 @@ export function reverbTypeByCode(code: number): ReverbType {
   }
 }
 
-export function reverbTypeToCode(reverbType: ReverbType): number {
+export function reverbTypeToCode(
+  reverbType: ReverbType | undefined
+): number | undefined {
   switch (reverbType) {
+    case undefined:
+      return undefined;
     case ReverbType.ROOM:
       return 0;
     case ReverbType.HALL:
