@@ -1,6 +1,6 @@
 {
   "name": "marshall-code-api",
-  "version": "0.5.10",
+  "version": "0.5.11",
   "description": "API for Marshall CODE",
   "main": "lib/index.js",
   "scripts": {
