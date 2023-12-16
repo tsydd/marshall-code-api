@@ -99,7 +99,7 @@ class CodeClient implements CodeApi {
   }
 
   private setInput(input: MIDIInput) {
-    if (input.name !== "CODE") {
+    if (!input.name?.toUpperCase().startsWith("CODE")) {
       return;
     }
     if (input.state === "disconnected") {
@@ -114,7 +114,7 @@ class CodeClient implements CodeApi {
   }
 
   private setOutput(output: MIDIOutput) {
-    if (output.name !== "CODE") {
+    if (!output.name?.toUpperCase().startsWith("CODE")) {
       return;
     }
     switch (output.state) {
